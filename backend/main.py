@@ -90,7 +90,7 @@ async def process_audio(file: UploadFile = File(...), effect: str = Form(...)):
     elif effect == "delay":
         board = Pedalboard([Delay(delay_seconds=0.5, feedback=0.5)])
     elif effect == "distortion":
-        board = Pedalboard([Distortion(drive_db=30)])
+        board = Pedalboard([Distortion(drive_db=15)])
     else:
         board = Pedalboard(
             [
