@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Melodia: VibeFX Quest</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="https://cdn.jsdelivr.net/gh/mattdiamond/Recorderjs@master/dist/recorder.js"></script>
+</head>
+
+<body>
+
+<!-- Landing Page -->
+<div id="intro-page">
+  <p>
+    <strong>ในดินแดนแห่ง <span style="color:#FFD700;">Melodia</span></strong> ดนตรีคือพลังแห่งชีวิตและจิตวิญญาณ<br>
+    คริสตัลศักดิ์สิทธิ์ <strong>Harmony Crystal</strong> ถูกจอมเวทย์ <strong>Silencio</strong> ปล้นเสียงไปจนทุกอย่างเงียบงัน<br>
+    ผู้กล้า (คุณ!) จะต้องออกเดินทางไปยังดินแดนแห่งเสียงทั้งหลาย<br>
+    เพื่อรวบรวม <strong>Sound Essence</strong> และฟื้นคืนพลังให้คริสตัลอีกครั้ง<br><br>
+    🧙‍♂️ พร้อมจะสร้างเสียงของตัวเองและร่ายเวทเอฟเฟกต์แล้วหรือยัง?
+  </p>
+  <button class="btn" onclick="window.location.href='/map'">เริ่มต้นการเดินทาง</button>
+</div>
+
+
+<!-- Effect Map Page -->
+<div id="map-page" class="centered hidden">
+  <h2>🎛 Explore Sound Zones</h2>
+  <button class="btn" onclick="startRecording()">🎙 Record Your Voice (5s)</button>
+  <div id="effect-buttons" class="centered hidden">
+    <div class="stage-btn" onclick="applyEffect('reverb')">🧱 Reverb<br>"Resonance Canyon"</div>
+    <div class="stage-btn" onclick="applyEffect('chorus')">⛪ Chorus<br>"Celestial Choir"</div>
+    <div class="stage-btn" onclick="applyEffect('echo')">🕳 Echo<br>"Whispering Cavern"</div>
+    <div class="stage-btn" onclick="applyEffect('distortion')">🌩 Distortion<br>"Storm Rift"</div>
+  </div>
+  <br>
+  <audio id="player" controls class="hidden"></audio>
+</div>
+
+<!-- Recorder.js -->
+<script src="https://cdn.jsdelivr.net/gh/mattdiamond/Recorderjs@master/dist/recorder.js"></script>
+<script>
+  let recorder, audioContext, recordedBlob = null;
+
+  function startAdventure() {
+    document.getElementById("intro-page").classList.add("hidden");
+    document.getElementById("map-page").classList.remove("hidden");
+  }
+
+  async function startRecording() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const input = audioContext.createMediaStreamSource(stream);
+    recorder = new Recorder(input, { numChannels: 1 });
+
+    recorder.record();
+    console.log("🎙 Recording started...");
+
+    setTimeout(() => {
+      recorder.stop();
+      recorder.exportWAV(blob => {
+        recordedBlob = blob;
+        document.getElementById("effect-buttons").classList.remove("hidden");
+        document.getElementById("player").classList.remove("hidden");
+        const url = URL.createObjectURL(blob);
+        document.getElementById("player").src = url;
+      });
+    }, 5000);
+  }
+
+  async function applyEffect(effect) {
+    const formData = new FormData();
+    formData.append("file", recordedBlob, "recording.wav");
+    formData.append("effect", effect);
+
+    const response = await fetch("/process-audio/", {
+      method: "POST",
+      body: formData
+    });
+
+    const processedBlob = await response.blob();
+    const url = URL.createObjectURL(processedBlob);
+    document.getElementById("player").src = url;
+  }
+</script>
+
+</body>
+</html>

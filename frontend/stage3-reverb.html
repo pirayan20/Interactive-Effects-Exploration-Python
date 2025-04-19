@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ด่านที่ 3: Resonance Canyon</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/gh/mattdiamond/Recorderjs@master/dist/recorder.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #111;
+      color: white;
+    }
+    .container {
+      display: flex;
+      height: 100vh;
+    }
+    .left {
+      flex: 7;
+      position: relative;
+    }
+    .left img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .record-btn {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #5b2cff;
+      color: white;
+      padding: 0.8rem 2rem;
+      border: none;
+      font-size: 1rem;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    #recordProgress {
+      position: absolute;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 10px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 5px;
+      overflow: hidden;
+      display: none;
+    }
+    #recordProgressFill {
+      width: 0%;
+      height: 100%;
+      background: #ffd700;
+    }
+    .right {
+      flex: 3;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      color: white;
+    }
+    .right h1 {
+      font-size: 1.6rem;
+      margin-bottom: 1rem;
+    }
+    .right p {
+      margin-bottom: 1rem;
+      line-height: 1.6;
+    }
+    .btn {
+      background: #ffd700;
+      color: #321f63;
+      padding: 0.8rem 2rem;
+      border: none;
+      font-size: 1rem;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 1.5rem;
+    }
+    audio {
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="left">
+      <img src="/static/picture/stage3.png" alt="Resonance Canyon">
+      <button class="record-btn" id="recordBtn">🎙 เริ่มอัดเสียง (5 วินาที)</button>
+      <div id="recordProgress" style="position: absolute; bottom: 8ch; left: 50%; transform: translateX(-50%); width: 60%; height: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; overflow: hidden; display: none;">
+        <div id="recordProgressFill" style="width: 0%; height: 100%; background: #ffd700;"></div>
+      </div>
+    </div>
+    <div class="right">
+      <h1>ด่านที่ 3: หุบเขาก้องกังวาน <strong>“Resonance Canyon”</strong> (Reverb)</h1>
+      <p>📍 <strong>สถานที่:</strong> หุบเขาก้องกังวาน “Resonance Canyon”</p>
+      <p>
+        📖 <strong>เนื้อเรื่อง:</strong><br>
+        ผู้เล่นมาถึงหุบเขาที่เสียงของพวกเขาจะสะท้อนออกไปไกลไม่มีที่สิ้นสุด ที่นี่มีกับดักเสียงลวงตา
+        และต้องใช้พลังของ <strong>Reverb</strong> เพื่อผ่านไปให้ได้
+      </p>
+      <p>
+        🎤 <strong>ภารกิจ:</strong> อัดเสียงพูดหรือร้อง แล้วใส่ <strong>Reverb Effect</strong>
+        เพื่อทำให้เสียงก้องและค้นพบกับดักที่ซ่อนอยู่
+      </p>
+      <audio id="player" controls style="display:none;"></audio>
+      <button class="btn" id="continueBtn" onclick="window.location.href='/map?stage=3'" style="display:none;">กลับสู่แผนที่</button>
+    </div>
+  </div>
+
+  <script>
+    let recorder, audioContext, recordedBlob;
+
+    document.getElementById("recordBtn").onclick = async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const input = audioContext.createMediaStreamSource(stream);
+      recorder = new Recorder(input, { numChannels: 1 });
+
+      const bar = document.getElementById("recordProgress");
+      const fill = document.getElementById("recordProgressFill");
+      bar.style.display = "block";
+      fill.style.width = "0%";
+
+      recorder.record();
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 1;
+        fill.style.width = `${(progress / 50) * 100}%`;
+        if (progress >= 50) clearInterval(interval);
+      }, 100);
+
+      setTimeout(() => {
+        recorder.stop();
+        bar.style.display = "none";
+
+        recorder.exportWAV(async (blob) => {
+          recordedBlob = blob;
+
+          const formData = new FormData();
+          formData.append("file", recordedBlob, "recording.wav");
+          formData.append("effect", "reverb");
+
+          const response = await fetch("/process-audio/", {
+            method: "POST",
+            body: formData
+          });
+
+          const processedBlob = await response.blob();
+          const url = URL.createObjectURL(processedBlob);
+          const player = document.getElementById("player");
+          player.src = url;
+          player.style.display = "block";
+          document.getElementById("continueBtn").style.display = "inline-block";
+        });
+      }, 5000);
+    };
+  </script>
+</body>
+</html>

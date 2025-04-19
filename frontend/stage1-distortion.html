@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ด่านที่ 1: Storm Rift</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/gh/mattdiamond/Recorderjs@master/dist/recorder.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #111;
+      color: white;
+    }
+    .container {
+      display: flex;
+      height: 100vh;
+    }
+    .left {
+      flex: 7;
+      position: relative;
+    }
+    .left img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .record-btn {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #5b2cff;
+      color: white;
+      padding: 0.8rem 2rem;
+      border: none;
+      font-size: 1rem;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .right {
+      flex: 3;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      color: white;
+    }
+    .right h1 {
+      font-size: 1.6rem;
+      margin-bottom: 1rem;
+    }
+    .right p {
+      margin-bottom: 1rem;
+      line-height: 1.6;
+    }
+    .btn {
+      background: #ffd700;
+      color: #321f63;
+      padding: 0.8rem 2rem;
+      border: none;
+      font-size: 1rem;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 1.5rem;
+    }
+    audio {
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="left">
+      <img src="/static/picture/stage1.png" alt="Volt - Storm Rift">
+      <button class="record-btn" id="recordBtn">🎙 เริ่มอัดเสียง (5 วินาที)</button>
+      <div id="recordProgress" style="position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); width: 60%; height: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; overflow: hidden; display: none;">
+        <div id="recordProgressFill" style="width: 0%; height: 100%; background: #ffd700;"></div>
+      </div>
+
+    </div>
+    <div class="right">
+      <h1>ด่านที่ 1: ช่องแคบพายุ <strong>“Storm Rift”</strong> (Distortion)</h1>
+      <p>📍 <strong>สถานที่:</strong> ช่องแคบพายุ “Storm Rift”</p>
+      <p>
+        📖 <strong>เนื้อเรื่อง:</strong><br>
+        ผู้เล่นเดินทางมาถึง <strong>Storm Rift</strong> ดินแดนที่เต็มไปด้วยฟ้าผ่าตลอดเวลา
+        และถูกเฝ้าโดย <strong>“Volt, เทพสายฟ้า”</strong><br>
+        เขาจะปล่อยสายฟ้าโจมตีทุกคนที่ไม่มีพลังเสียงที่แข็งแกร่งพอ
+      </p>
+      <p>
+        🎤 <strong>ภารกิจ:</strong> อัดเสียงตะโกนของตัวเอง แล้วใส่ <strong>Distortion Effect</strong>
+        เพื่อทำให้เสียงแข็งแกร่งพอที่จะก้องไปทั่วช่องแคบและทำให้ <strong>Volt</strong> ยอมรับ
+      </p>
+      <audio id="player" controls style="display:none;"></audio>
+      <button class="btn" id="continueBtn" onclick="window.location.href='/map?stage=1'" style="display:none;">กลับสู่แผนที่</button>
+    </div>
+  </div>
+
+  <script>
+    let recorder, audioContext, recordedBlob;
+
+    document.getElementById("recordBtn").onclick = async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const input = audioContext.createMediaStreamSource(stream);
+      recorder = new Recorder(input, { numChannels: 1 });
+
+      // Show and reset progress bar
+      const bar = document.getElementById("recordProgress");
+      const fill = document.getElementById("recordProgressFill");
+      bar.style.display = "block";
+      fill.style.width = "0%";
+
+      recorder.record();
+      console.log("🎙 เริ่มอัดเสียง...");
+
+      // Animate the progress bar over 5 seconds
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 1;
+        fill.style.width = `${(progress / 50) * 100}%`;
+        if (progress >= 50) clearInterval(interval);
+      }, 100); // updates every 100ms
+
+      setTimeout(() => {
+        recorder.stop();
+        bar.style.display = "none"; // hide progress bar
+
+        recorder.exportWAV(async (blob) => {
+          recordedBlob = blob;
+
+          const formData = new FormData();
+          formData.append("file", recordedBlob, "recording.wav");
+          formData.append("effect", "distortion");
+
+          const response = await fetch("/process-audio/", {
+            method: "POST",
+            body: formData
+          });
+
+          const processedBlob = await response.blob();
+          const url = URL.createObjectURL(processedBlob);
+          const player = document.getElementById("player");
+          player.src = url;
+          player.style.display = "block";
+          document.getElementById("continueBtn").style.display = "inline-block";
+        });
+      }, 5000);
+    };
+  </script>
+
+</body>
+</html>

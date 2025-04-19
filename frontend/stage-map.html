@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Melodia Adventure Map</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/gh/mattdiamond/Recorderjs@master/dist/recorder.js"></script>
+  <style>
+    body {
+      background: url('/static/picture/landing.png') no-repeat center center;
+      background-size: cover;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      color: white;
+      text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+    }
+    .stage-map {
+      text-align: center;
+      padding: 2rem;
+      background-color: rgba(0, 0, 0, 0.5);
+      margin: 2rem;
+      border-radius: 20px;
+    }
+    .progress-bar {
+      margin: 1rem auto;
+      width: 60%;
+      background: #ccc;
+      height: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: #ffd700;
+      width: 0;
+      transition: width 0.3s ease-in-out;
+    }
+    .stage-container {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    .stage {
+      width: 200px;
+      padding: 1rem;
+      background: rgba(255,255,255,0.85);
+      color: #222;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s ease;
+      text-shadow: none;
+    }
+    .stage.locked {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .stage.completed {
+      border: 3px solid #00c851;
+    }
+    .stage.active {
+      outline: 3px solid #ffd700;
+      transform: scale(1.05);
+    }
+    .stage h3 {
+      margin-top: 0.5rem;
+    }
+    .summary {
+      display: none;
+      text-align: center;
+      background: rgba(255,255,255,0.9);
+      padding: 2rem;
+      border-radius: 12px;
+      margin: 2rem;
+      color: #000;
+      text-shadow: none;
+    }
+  </style>
+</head>
+<body>
+<button onclick="window.location.href='/'" class="btn" style="position: fixed; bottom: 20px; left: 20px;">
+  ⬅️ กลับไปหน้าแรก
+</button>
+  <div class="stage-map">
+    <h1>✨ แผนที่การเดินทางใน Melodia ✨</h1>
+    <div class="progress-bar">
+      <div class="progress-bar-fill" id="progressBar"></div>
+    </div>
+    <div class="stage-container" id="stageContainer">
+      <div class="stage" data-index="0">
+        <img src="/static/picture/lightning.png" width="100">
+        <h3>Storm Rift</h3>
+        <p>Distortion</p>
+      </div>
+      <div class="stage locked" data-index="1">
+        <img src="/static/picture/chapel.png" width="100">
+        <h3>Celestial Choir</h3>
+        <p>Chorus</p>
+      </div>
+      <div class="stage locked" data-index="2">
+        <img src="/static/picture/canyon.png" width="100">
+        <h3>Resonance Canyon</h3>
+        <p>Reverb</p>
+      </div>
+      <div class="stage locked" data-index="3">
+        <img src="/static/picture/cave.png" width="100">
+        <h3>Whispering Cavern</h3>
+        <p>Echo</p>
+      </div>
+      <div class="stage locked" data-index="4">
+        <img src="/static/picture/wizard.png" width="100">
+        <h3>Boss Fight</h3>
+        <p>Final Test</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary" id="summaryBox">
+    <h2>✨ Stage Completed!</h2>
+    <p id="summaryText"></p>
+    <button onclick="continueToNext()" class="btn">Continue</button>
+  </div>
+
+<script>
+
+    let currentStage = 0;
+
+    const params = new URLSearchParams(window.location.search);
+    const stageParam = parseInt(params.get("stage"));
+    if (!isNaN(stageParam)) {
+    currentStage = stageParam; // Unlock the next stage
+    }
+
+
+  function updateStageView() {
+    const stages = document.querySelectorAll('.stage');
+    stages.forEach((el, index) => {
+      el.classList.remove('active', 'completed', 'locked');
+      if (index < currentStage) el.classList.add('completed');
+      else if (index === currentStage) el.classList.add('active');
+      else el.classList.add('locked');
+    });
+    document.getElementById("progressBar").style.width = ((currentStage) / 5) * 100 + "%";
+  }
+
+  function showSummary(index) {
+    const stageNames = ["Storm Rift", "Celestial Choir", "Resonance Canyon", "Whispering Cavern", "Boss Fight"];
+    document.getElementById("summaryText").innerText = `คุณได้ปลดล็อก ${stageNames[index]} แล้ว!`;
+    document.getElementById("summaryBox").style.display = 'block';
+  }
+
+  function continueToNext() {
+    document.getElementById("summaryBox").style.display = 'none';
+    currentStage++;
+    updateStageView();
+  }
+
+  document.getElementById("stageContainer").addEventListener("click", (e) => {
+    const stageCard = e.target.closest(".stage");
+    if (!stageCard || stageCard.classList.contains("locked")) return;
+    const stageIndex = parseInt(stageCard.dataset.index);
+    if (stageIndex > currentStage) return;
+
+    // Redirect to the corresponding stage page
+    const stagePages = [
+        "/stage1-distortion",
+        "/stage2-chorus",
+        "/stage3-reverb",
+        "/stage4-delay",
+        "/stage5-boss"
+    ];
+    window.location.href = stagePages[stageIndex];
+ });
+
+
+  updateStageView();
+</script>
+</body>
+</html>
